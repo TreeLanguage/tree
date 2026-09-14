@@ -1,5 +1,8 @@
-file(GLOB_RECURSE TEST_SOURCES "*.cpp")
-add_executable(tests ${TEST_SOURCES})
+add_executable(tests
+    unit/lexer_test.cpp
+    unit/parser_test.cpp
+    unit/resolver_test.cpp
+    main.cpp)
 
 target_link_libraries(tests PRIVATE treelib)
 

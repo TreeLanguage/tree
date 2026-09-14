@@ -51,7 +51,6 @@ public:
         out << "Options:\n"
             << "  help       show this help message\n"
             << "  version    show version information\n"
-            << "  lsp        start the language server\n"
             << "  <file>     run a Tree source file\n\n\n";
         out << "Arguments:\n"
             << "  file   : program read from script file\n"

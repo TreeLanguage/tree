@@ -6,6 +6,7 @@
 #include <iterator>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <variant>
@@ -130,6 +131,7 @@ private:
         merged.reserve(prog_.exprs.size());
 
         std::unordered_set<std::string> closed_names;
+        std::unordered_map<std::string, tree::ExprId> group_binding;
 
         size_t i = 0;
 
@@ -144,8 +146,9 @@ private:
 
             const std::string group_name = *name;
             const tree::Span first_span = prog_.arena.get(prog_.exprs[i]).span;
+            const bool reopened = closed_names.contains(group_name);
 
-            if (closed_names.contains(group_name)) {
+            if (reopened) {
                 std::string message;
                 message.reserve(64 + (group_name.size() * 2));
                 message += "clauses of function '";
@@ -194,8 +197,18 @@ private:
 
             closed_names.insert(group_name);
 
+            if (reopened) {
+                splice_into_existing_group(group_binding.at(group_name),
+                                           std::move(clauses),
+                                           last_span);
+
+                i = j;
+                continue;
+            }
+
             if (clauses.size() == 1) {
                 merged.push_back(prog_.exprs[i]);
+                group_binding.emplace(group_name, prog_.exprs[i]);
                 i = j;
                 continue;
             }
@@ -210,12 +223,52 @@ private:
             const tree::PatternId lhs =
                 prog_.arena.make_pattern<tree::VarPattern>(target_span, group_name);
 
-            merged.push_back(prog_.arena.make_expr<tree::Binding>(span, lhs, multi));
+            const tree::ExprId binding_id = prog_.arena.make_expr<tree::Binding>(span, lhs, multi);
+
+            merged.push_back(binding_id);
+            group_binding.emplace(group_name, binding_id);
 
             i = j;
         }
 
         prog_.exprs = std::move(merged);
+    }
+
+    void splice_into_existing_group(tree::ExprId existing_binding_id,
+                                    std::vector<tree::LambdaClause> new_clauses,
+                                    tree::Span new_end_span) {
+        tree::Expr& binding_expr = prog_.arena.get(existing_binding_id);
+        binding_expr.span = tree::Span(binding_expr.span.begin, new_end_span.end);
+
+        auto& binding = std::get<tree::Binding>(binding_expr.value);
+        tree::Expr& value_expr = prog_.arena.get(binding.value);
+
+        if (auto* multi = std::get_if<tree::MultiClauseLambda>(&value_expr.value)) {
+            value_expr.span = tree::Span(value_expr.span.begin, new_end_span.end);
+            multi->clauses.insert(multi->clauses.end(),
+                                  std::make_move_iterator(new_clauses.begin()),
+                                  std::make_move_iterator(new_clauses.end()));
+
+            return;
+        }
+
+        const auto& lambda = std::get<tree::Lambda>(value_expr.value);
+
+        std::vector<tree::LambdaClause> clauses;
+        clauses.reserve(1 + new_clauses.size());
+        clauses.push_back(tree::LambdaClause{.param = lambda.param, .body = lambda.body});
+
+        for (auto& clause : new_clauses) {
+            clauses.push_back(std::move(clause));
+        }
+
+        const tree::Span span{value_expr.span.begin, new_end_span.end};
+        const std::optional<std::string> name = lambda.name;
+
+        const tree::ExprId new_value_id =
+            prog_.arena.make_expr<tree::MultiClauseLambda>(span, name, std::move(clauses));
+
+        std::get<tree::Binding>(prog_.arena.get(existing_binding_id).value).value = new_value_id;
     }
 
     [[nodiscard]] const std::string* lambda_binding_name(tree::ExprId id) const {

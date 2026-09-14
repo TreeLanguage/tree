@@ -1,3 +1,5 @@
+#include "resolver.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -17,7 +19,6 @@
 
 #include "ast.h"
 #include "diagnostic.h"
-#include "resolver.h"
 #include "span.h"
 
 namespace {
@@ -324,11 +325,6 @@ private:
             },
             [&](const tree::MultiClauseLambda& lambda) {
                 resolve_multi_clause(lambda, scope, top_level_owners);
-            },
-            [&](const tree::Binding& binding) {
-                Scope binding_scope{.locals = {}, .parent = &scope};
-                resolve_expr(binding.value, binding_scope, top_level_owners);
-                bind_local_pattern(binding.target, binding_scope);
             },
             [&](const auto&) {});
     }

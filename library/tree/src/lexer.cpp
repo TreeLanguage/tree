@@ -349,28 +349,12 @@ private:
 
         while (!at_end() && peek() != '"') {
             if (peek() == '\\' && i_ + 1 < source_.size()) {
-                i_++;
-                col_++;
-
-                if (peek() == '\n') {
-                    line_++;
-                    col_ = 1;
-                } else {
-                    col_++;
-                }
-
-                i_++;
+                advance_pos(1);
+                advance_pos(1, peek());
                 continue;
             }
 
-            if (peek() == '\n') {
-                line_++;
-                col_ = 1;
-            } else {
-                col_++;
-            }
-
-            i_++;
+            advance_pos(1, peek());
         }
 
         const std::string_view raw = source_.substr(start_idx, i_ - start_idx);

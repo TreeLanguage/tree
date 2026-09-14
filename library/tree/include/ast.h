@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -176,18 +177,26 @@ public:
     }
 
     [[nodiscard]] Expr& get(ExprId id) {
+        assert(id.index < exprs_.size() && "Arena::get: invalid or out-of-range ExprId");
+
         return exprs_[id.index];
     }
 
     [[nodiscard]] const Expr& get(ExprId id) const {
+        assert(id.index < exprs_.size() && "Arena::get: invalid or out-of-range ExprId");
+
         return exprs_[id.index];
     }
 
     [[nodiscard]] Pattern& get(PatternId id) {
+        assert(id.index < patterns_.size() && "Arena::get: invalid or out-of-range PatternId");
+
         return patterns_[id.index];
     }
 
     [[nodiscard]] const Pattern& get(PatternId id) const {
+        assert(id.index < patterns_.size() && "Arena::get: invalid or out-of-range PatternId");
+
         return patterns_[id.index];
     }
 

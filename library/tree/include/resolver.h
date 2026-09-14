@@ -7,9 +7,10 @@
 #include <vector>
 
 #include "ast.h"
-#include "diagnostic.h"
 
 namespace tree {
+
+class DiagnosticEngine;
 
 struct BindingId {
     uint32_t index = std::numeric_limits<uint32_t>::max();
@@ -24,6 +25,7 @@ struct BindingId {
 enum class BindingKind : uint8_t {
     TopLevelValue,
     TopLevelFn,
+    Parameter,
     Local,
 };
 
