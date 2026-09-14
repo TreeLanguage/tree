@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <utility>
@@ -13,20 +14,20 @@
 namespace tree {
 
 struct PatternId {
-    uint32_t index = UINT32_MAX;
+    uint32_t index = std::numeric_limits<uint32_t>::max();
 
-    [[nodiscard]] bool valid() const {
-        return index != UINT32_MAX;
+    [[nodiscard]] constexpr bool valid() const noexcept {
+        return index != std::numeric_limits<uint32_t>::max();
     }
 
-    friend bool operator==(PatternId, PatternId) = default;
+    friend constexpr bool operator==(PatternId, PatternId) = default;
 };
 
 struct ExprId {
-    uint32_t index = UINT32_MAX;
+    uint32_t index = std::numeric_limits<uint32_t>::max();
 
-    [[nodiscard]] bool valid() const {
-        return index != UINT32_MAX;
+    [[nodiscard]] constexpr bool valid() const noexcept {
+        return index != std::numeric_limits<uint32_t>::max();
     }
 
     friend bool operator==(ExprId, ExprId) = default;
